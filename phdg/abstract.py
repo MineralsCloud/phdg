@@ -4,14 +4,17 @@ import itertools
 
 class Substance:
     substance_type: str
+    substance_name: str
     gibbs_free_energy: GibbsFreeEnergyGrid
 
-    def __init__(self, substance_type: str):
+    def __init__(self, substance_name: str, substance_type: str):
         self.substance_type = substance_type
+        self.substance_name = substance_name
     
     def __repr__(self):
-        return "<Substance {}>".format(
-            self.substance_type
+        return "<Substance {} ({})>".format(
+            self.substance_type,
+            self.substance_name
         )
 
 class System:
@@ -51,7 +54,10 @@ class System:
 
         for manifest_item in self.substance_manifest:
             combinations.extend(itertools.product(*(
-                self.find_substance(substance_spec[1])
+                (
+                    (substance_spec[0], substance)
+                    for substance in self.find_substance(substance_spec[1])
+                )
                 for substance_spec in manifest_item
             )))
         
@@ -60,12 +66,12 @@ class System:
 if __name__ == '__main__':
     s = System()
     s.substances = [
-        Substance('H2'),
-        Substance('H2'),
-        Substance('O2'),
-        Substance('O2'),
-        Substance('H2O'),
-        Substance('H2O'),
+        Substance('H2', 'H2'),
+        Substance('D2', 'H2'),
+        Substance('O[16]2', 'O2'),
+        Substance('O[18]2', 'O2'),
+        Substance('Ice X', 'H2O'),
+        Substance('Ice VII', 'H2O'),
     ]
     s.substance_manifest = [
         [(1, 'H2'), (1, 'O2')],
