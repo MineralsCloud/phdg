@@ -11,17 +11,34 @@ class Substance:
     substance_type: str
     substance_name: str
     gibbs_free_energy: GibbsFreeEnergyGrid
+    gibbs_free_energy_num_formula_units: float
 
-    def __init__(self, substance_name: str, substance_type: str, fname: str = ""):
+    def __init__(self, substance_name: str, substance_type: str, fname: str, num_formula_units: float):
         self.substance_type = substance_type
         self.substance_name = substance_name
-        # self.gibbs_free_energy = GibbsFreeEnergyGridTableReader().read_gibbs_free_energy(fname)
+        self.gibbs_free_energy = GibbsFreeEnergyGridTableReader().read_gibbs_free_energy(fname)
+        self.gibbs_free_energy_num_formula_units = num_formula_units
     
     def __repr__(self):
         return "<Substance {} ({})>".format(
             self.substance_type,
             self.substance_name
         )
+
+    def get_temperature_range(self) -> Tuple[float]:
+        return (
+            numpy.min(self.gibbs_free_energy.temperature_array),
+            numpy.max(self.gibbs_free_energy.temperature_array)
+        )
+
+    def get_pressure_range(self) -> Tuple[float]:
+        return (
+            numpy.min(self.gibbs_free_energy.pressure_array),
+            numpy.max(self.gibbs_free_energy.pressure_array)
+        )
+    
+    def get_gibbs_free_energy(self, P, T):
+        return self.gibbs_free_energy.g_pt(P, T) / self.gibbs_free_energy_num_formula_units
 
 class Combination:
     '''
@@ -33,29 +50,46 @@ class Combination:
     def __init__(self, substances):
         self.substances = substances
 
-    def get_temperature_range(self):
+    def get_temperature_range(self) -> Tuple[float]:
         return (
-            numpy.min([
-                substance[1].gibbs_free_energy.temperature_array
+            numpy.max([
+                substance[1].get_temperature_range()[0]
                 for substance in self.substances
             ]),
-            numpy.max([
-                substance[1].gibbs_free_energy.temperature_array
+            numpy.min([
+                substance[1].get_temperature_range()[1]
                 for substance in self.substances
             ]) 
         )
 
-    def get_pressure_range(self):
+    def get_pressure_range(self) -> Tuple[float]:
         return (
-            numpy.min([
-                substance[1].gibbs_free_energy.pressure_array
+            numpy.max([
+                substance[1].get_pressure_range()[0]
                 for substance in self.substances
             ]),
-            numpy.max([
-                substance[1].gibbs_free_energy.pressure_array
+            numpy.min([
+                substance[1].get_pressure_range()[1]
                 for substance in self.substances
             ]) 
         )
+
+    def is_valid_range(self):
+        if numpy.subtract(*self.get_pressure_range()) > 0: return False
+        elif numpy.subtract(*self.get_temperature_range()) > 0: return False
+        else: return True
+            
+    def get_gibbs_free_energy(self, P, T):
+
+        p_min, p_max = self.get_pressure_range()
+        t_min, t_max = self.get_temperature_range()
+
+        if P > p_min and P < p_max and T > t_min and T < t_max:
+            return numpy.sum([
+                substance[0] * substance[1].get_gibbs_free_energy(P, T) for substance in self.substances
+            ])
+        else:
+            return numpy.inf
     
     def __repr__(self):
         return "Combination [{}]".format(
@@ -77,7 +111,18 @@ class System:
     substances: List[Substance]
     substance_manifests: List[tuple]
 
-    def find_substances_by_type(self, substance_type: str):
+    def __init__(self, config):
+
+        self.substances = []
+        
+        for substance in config['system']['substances']:
+            self.substances.append(
+                Substance(substance['name'], substance['type'], substance['gibbs_dir'], substance['num_formula_units'])
+            )
+
+        self.substance_manifests = config['system']['manifests']
+
+    def find_substances_by_type(self, substance_type: str) -> list:
         '''
         Find substance based on given criterion, criteria could be the combination of the following:
 
@@ -95,9 +140,11 @@ class System:
             self.find_substances_by_type(substance_spec[1])
             for substance_spec in manifest
         )):
-            yield Combination(list(zip((s[0] for s in manifest), combination)))
+            combination = Combination(list(zip((s[0] for s in manifest), combination)))
+            if combination.is_valid_range():
+                yield combination
 
-    def find_combinations(self):
+    def find_combinations(self) -> List[Combination]:
         '''
         Find combinations based on given combination manifest
         '''
