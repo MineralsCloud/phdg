@@ -9,7 +9,8 @@ class Substance:
     The class represent a certain structure. It holds the name and type and Gibbs free energy for the phase.
     '''
     substance_type: str
-    substance_name: str
+    ssubstance_nameubstance_name: str
+    ssubstance_nameubstance_name: str
     gibbs_free_energy: GibbsFreeEnergyGrid
     gibbs_free_energy_num_formula_units: float
 
@@ -90,7 +91,12 @@ class Combination:
             ])
         else:
             return numpy.inf
-    
+
+    def get_gibbs_free_energy_unsafe(self, P, T):
+        return numpy.sum([
+            substance[0] * substance[1].get_gibbs_free_energy(P, T) for substance in self.substances
+        ], axis=0)
+
     def __repr__(self):
         return "Combination [{}]".format(
             ", ".join(str(substance) for substance in self.substances)

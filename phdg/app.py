@@ -6,25 +6,15 @@ import numpy
 
 import yaml
 
-if __name__ == "__main__":
+
+def draw_rectangle(x, y, text=""):
+    x_min, x_max = x
+    y_min, y_max = y
+    line, = plt.plot((x_min, x_max, x_max, x_min, x_min), (y_min, y_min, y_max, y_max, y_min))
+    plt.text(x_max, y_max, text, ha='right', va='top', color=line.get_color())
 
 
-    import os
-    
-    os.chdir('example/AlOOH')
-    
-    with open('input.yml') as fp:
-        config = yaml.load(fp)
-    
-    system = System(config)
-
-    def draw_rectangle(x, y, text=""):
-        x_min, x_max = x
-        y_min, y_max = y
-        line, = plt.plot((x_min, x_max, x_max, x_min, x_min), (y_min, y_min, y_max, y_max, y_min))
-        plt.text(x_max, y_max, text, ha='right', va='top', color=line.get_color())
-
-    # FIG 01
+def plot_fig_01(system):
 
     plt.figure()
 
@@ -48,7 +38,7 @@ if __name__ == "__main__":
     plt.ylabel('$T$ / K')
     plt.savefig('01-field-of-input.png', dpi=300)
 
-    # FIG 02
+def plot_fig_02(system):
 
     plt.figure()
 
@@ -70,7 +60,8 @@ if __name__ == "__main__":
     plt.ylabel('$T$ / K')
     plt.savefig('02-field-of-combinations.png', dpi=300)
 
-    # FIG 03
+
+def plot_fig_03(system):
 
     plt.figure()
 
@@ -117,4 +108,83 @@ if __name__ == "__main__":
     plt.savefig('03-full-phase-diagram.png', dpi=300)
 
     # FIG 04
+
+def plot_fig_04(system, p_range):
+
+    plt.figure()
     
+    combinations = [
+        combination for combination in system.find_combinations()
+        if (not combination.get_pressure_range()[1] < p_range[0]) and (not combination.get_pressure_range()[0] > p_range[1])
+    ]
+    
+    base_idx = 0
+
+    line_style_keys = list(matplotlib.lines.lineStyles.keys())[:4] * 3
+
+    linestyle_iter = iter(line_style_keys)
+
+    t_array = numpy.arange(0, 2000, 300)
+
+    for combination in combinations:
+
+        print(' - {} with P in {} and T in {}'.format(combination, combination.get_pressure_range(), combination.get_temperature_range()))
+
+        line_style = next(linestyle_iter)
+
+        t_min, t_max = combination.get_temperature_range()
+        p_min, p_max = combination.get_pressure_range()
+
+        p_array = numpy.arange(max(p_min, p_range[0]), min(p_max, p_range[1]), 1)
+        if len(p_array.tolist()) == 0: continue
+
+        from palettable.cartocolors.qualitative import Prism_10
+        from cycler import cycler
+
+        ax = plt.gca()
+        ax.set_prop_cycle(cycler('color', Prism_10.mpl_colors))
+
+
+        for t in t_array:
+            if t > t_max or t < t_min: continue
+            name = ' + '.join(s[1].substance_name for s in combination.substances)
+            plt.plot(
+                p_array,
+                combination.get_gibbs_free_energy_unsafe(p_array, t) - combinations[base_idx].get_gibbs_free_energy_unsafe(p_array, t),
+                label="{} at {} K".format(name, t),
+                linestyle=line_style
+            )
+        
+    plt.gca().legend([
+        matplotlib.lines.Line2D([0], [0], color=c)
+        for (t, c) in zip(t_array, Prism_10.mpl_colors[:len(t_array)])
+    ] + [
+        matplotlib.lines.Line2D([0], [0], linestyle=s, c='k')
+        for (c, s) in zip(combinations, line_style_keys[:len(combinations)])
+    ], [ "$T$ = {} K".format(t) for t in t_array ] + [ 
+      ' + '.join(s[1].substance_name for s in combination.substances)
+      for combination in combinations
+    ])
+    plt.xlabel('$P$ / GPa')
+    plt.ylabel(r'$\Delta G$ / Ryd')
+    plt.savefig('04-partial-g-p-{}-{}.png'.format(p_range[0], p_range[1]), dpi=300)
+
+
+
+if __name__ == "__main__":
+
+    import os
+    
+    os.chdir('example/AlOOH')
+    
+    with open('input.yml') as fp:
+        config = yaml.load(fp)
+    
+    system = System(config)
+
+    plot_fig_01(system)
+    plot_fig_02(system)
+    # plot_fig_03(system)
+    plot_fig_04(system, (30, 100))
+    plot_fig_04(system, (120, 300))
+    plot_fig_04(system, (30, 300))
