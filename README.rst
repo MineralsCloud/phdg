@@ -32,10 +32,13 @@ Combination
 Substance
 ---------
 
-Environment
-===========
+Usage
+=====
 
-This package is build for **Python 3** with minimalism in mind. It depends only on
+Dependencies
+------------
+
+This package is build for **Python 3** (>=3.6) with minimalism in mind. It depends only on
 
 - **Numpy**: Math library.
 - **Matplotlib**: Afterall, this is a package for ploting, right? :)
@@ -46,6 +49,16 @@ You would be able to install these dependencies with
 .. code :: bash
 
   $ pip3 install -r requirements.txt
+
+CLI Interface
+-------------
+
+Get the input file ready, and just run the ``src/app.py`` script with Python:
+
+.. code :: bash
+
+  $ python3 src/app.py {PATH/TO/INPUT.yaml}
+
 
 Licence
 =======
