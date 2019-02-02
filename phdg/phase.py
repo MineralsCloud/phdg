@@ -10,6 +10,9 @@ from abstract import Substance, Combination, System
 from plotters import Plotter
 
 class PhaseDiagramPlotter(Plotter):
+    '''
+    This module plots a phase diagram over a given range. It plot the entire diagram piece by piece.
+    '''
 
     type_keywords: List[str] = [ "phase_diagram" ]
     default_options: dict = {
@@ -141,7 +144,14 @@ class PhaseDiagramPlotter(Plotter):
             for p in p_bounds: plt.axvline(p, c='w', lw=.3, alpha=.3)
             for t in t_bounds: plt.axhline(t, c='w', lw=.3, alpha=.3)
         
-        print(C_grid.shape)
+        plt.legend([
+            matplotlib.patches.Patch(facecolor=c, ec=c, alpha=.7)
+            for c in contour_level_colors[1:]
+        ], [
+            ' + '.join(s[1].substance_name for s in combination.substances)
+            for combination in combinations
+            if combinations.index(combination) in set(C_grid.flatten().tolist())
+        ])
 
         plt.xlabel("$P$ / GPa")
         plt.ylabel("$T$ / K")
