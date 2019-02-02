@@ -1,6 +1,7 @@
 from typing import List
 from abstract import System
 from plotters import Plotter, SubstanceFieldPlotter, CombinationFieldPlotter, GibbsDifferencePlotter, PhaseDiagramSlowPlotter
+from phase import PhaseDiagramPlotter
 
 class PlotterManager:
 
@@ -16,7 +17,8 @@ class PlotterManager:
             SubstanceFieldPlotter(),
             CombinationFieldPlotter(),
             GibbsDifferencePlotter(),
-            PhaseDiagramSlowPlotter()
+            PhaseDiagramSlowPlotter(),
+            PhaseDiagramPlotter()
         ]
         self.system = system
     def register_plotter(self, plotter: Plotter):

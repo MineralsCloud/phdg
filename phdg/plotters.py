@@ -131,13 +131,16 @@ class GibbsDifferencePlotter(Plotter):
             if (not combination.get_pressure_range()[1] < p_range[0]) and (not combination.get_pressure_range()[0] > p_range[1])
         ]
         
-        base_idx = 2
+        base_idx = 0
 
         line_style_keys = list(matplotlib.lines.lineStyles.keys())[:4] * 3
 
         linestyle_iter = iter(line_style_keys)
 
         t_array = numpy.arange(options['t_range'][0], options['t_range'][1], options['t_step'])
+
+        from palettable.cartocolors.qualitative import Prism_10
+        from cycler import cycler
 
         for combination in combinations:
 
@@ -151,8 +154,7 @@ class GibbsDifferencePlotter(Plotter):
             p_array = numpy.arange(max(p_min, p_range[0]), min(p_max, p_range[1]), 1)
             if len(p_array.tolist()) == 0: continue
 
-            from palettable.cartocolors.qualitative import Prism_10
-            from cycler import cycler
+
 
             ax = plt.gca()
             ax.set_prop_cycle(cycler('color', Prism_10.mpl_colors))
