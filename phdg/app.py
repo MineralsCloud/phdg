@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 
 from abstract import System
-from plotters import PlotterManager
+from manager import PlotterManager
 
 
 if __name__ == '__main__':
