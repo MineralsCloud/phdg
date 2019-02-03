@@ -58,7 +58,7 @@ Let’s discuss these problem with the example of the buring of hydrogen in the 
 
 .. raw :: html
 
-  <p align="center">H<sub>2</sub> (g) + O<sub>2</sub> (g) = 2 H<sub>2</sub>O (l)</p>
+  <p align="center">2 H<sub>2</sub> (g) + O<sub>2</sub> (g) = 2 H<sub>2</sub>O (l)</p>
 
 In this reaction, *substances* are |H2| (g), |O2| (g) and |H2O| (l). However, if you would like to work on high temperature status, you would want to add in |H2O| (g), which is water vapour, then you should be tabulating the following four:
 
@@ -106,6 +106,47 @@ Get the input file ready, and just run the ``src/app.py`` script with Python:
 
 Input file
 ----------
+
+Currently we only support YAML input file.
+
+Example
+^^^^^^^
+
+This is an example input file as we have discussed for the hydrogen-oxygen system:
+
+.. code :: yaml
+
+  system:
+    substances:
+      - name: H2O (l)
+        type: H2O
+        gibbs_dir: /path/to/gibbs/for/water
+      - name: H2O (g)
+        type: H2O
+        gibbs_dir: /path/to/gibbs/for/water/vapour
+      - name: H2 (g)
+        type: H2
+        gibbs_dir: /path/to/gibbs/for/hydrogen
+      - name: O2 (g)
+        type: O2
+        gibbs_dir: /path/to/gibbs/for/oxygen
+    manifests:
+      - [[2, H2O (g)]]
+      - [[2, H2O (l)]]
+      - [[2, H2 (g)], [1, O2(g)]]
+  plots:
+    - type: substances
+      output: /output/for/substance/plot.png
+      args:
+        p_range: [0.1, 0.2]
+        t_range: [0, 120]
+    - type: combinations
+      output: /output/for/combination/plot.png
+      args:
+    - type: gibbs_free_energy_difference
+      output: /output/for/gibbs/free/energy/difference.png
+    - type: phase_diagram
+      output: /output/for/the/system.png
 
 Licence
 =======
