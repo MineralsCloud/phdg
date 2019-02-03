@@ -47,6 +47,35 @@ Substance
 
 The substance could be understood as one polymorph for one given chemical formula, it is the basic unit of processing. Substance instance holds the gibbs free energy.
 
+Example
+^^^^^^^
+.. |H2O| replace:: H\ :sub:`2`\ O
+.. |H2| replace:: H\ :sub:`2`
+.. |O2| replace:: O\ :sub:`2`
+
+
+Let’s discuss these problem with the example of the buring of hydrogen in the air. Which is the following reaction equation:
+
+.. raw :: html
+
+  <p align="center">H<sub>2</sub> (g) + O<sub>2</sub> (g) = 2 H<sub>2</sub>O (l)</p>
+
+In this reaction, *substances* are |H2| (g), |O2| (g) and |H2O| (l). However, if you would like to work on high temperature status, you would want to add in |H2O| (g), which is water vapour, then you should be tabulating the following four:
+
+* |H2O| (g)
+* |H2O| (l)
+* |H2| (g)
+* |O2| (g)
+
+Then the *combinations* should be the following three:
+
+* 2 |H2O| (g)
+* 2 |H2O| (l)
+* 2 |H2| (g) + |O2| (g)
+
+And all these are the hydrogen-oxygen *system*.
+
+
 Usage
 =====
 
@@ -65,7 +94,7 @@ You would be able to install these dependencies with
 
   $ pip3 install -r requirements.txt
 
-CLI Interface
+CLI interface
 -------------
 
 Get the input file ready, and just run the ``src/app.py`` script with Python:
@@ -74,6 +103,9 @@ Get the input file ready, and just run the ``src/app.py`` script with Python:
 
   $ python3 src/app.py {PATH/TO/INPUT.yaml}
 
+
+Input file
+----------
 
 Licence
 =======
