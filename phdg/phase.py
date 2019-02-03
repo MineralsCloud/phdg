@@ -146,7 +146,8 @@ class PhaseDiagramPlotter(Plotter):
         
         plt.legend([
             matplotlib.patches.Patch(facecolor=c, ec=c, alpha=.7)
-            for c in contour_level_colors[1:]
+            for c in contour_level_colors[:]
+            if contour_level_colors.index(c) - 1 in set(C_grid.flatten().tolist())
         ], [
             ' + '.join(s[1].substance_name for s in combination.substances)
             for combination in combinations

@@ -26,11 +26,20 @@ class Plotter:
 
         options = self._load_kwargs(kwargs)
 
-def draw_rectangle(x, y, text=""):
+def draw_rectangle(x, y, options: dict, text=""):
     x_min, x_max = x
     y_min, y_max = y
-    line, = plt.plot((x_min, x_max, x_max, x_min, x_min), (y_min, y_min, y_max, y_max, y_min))
-    plt.text(x_max, y_max, text, ha='right', va='top', color=line.get_color())
+    #c = next(plt.gca().get_prop_cycle())
+    #print(dir(c))
+
+    c = numpy.random.random(3).tolist()
+    fc = tuple(c + [.1])
+    ec = tuple(c + [.7])
+    #line, = plt.plot((x_min, x_max, x_max, x_min, x_min), (y_min, y_min, y_max, y_max, y_min))
+    rect = matplotlib.patches.Rectangle((x_min, y_min), -numpy.subtract(*x), -numpy.subtract(*y), facecolor=fc, edgecolor=ec)
+    plt.gca().add_patch(rect)
+    plt.text(x_max, y_max, text, ha='right', va='top', color=ec, fontsize="small")
+    return text, rect
 
 class SubstanceFieldPlotter(Plotter):
 
@@ -59,7 +68,7 @@ class SubstanceFieldPlotter(Plotter):
             p_range = substance.get_pressure_range()
             t_range = substance.get_temperature_range()
 
-            draw_rectangle(p_range, t_range, '{} ({})'.format(
+            draw_rectangle(p_range, t_range, options, '{} ({})'.format(
                 substance.substance_type,
                 substance.substance_name)
             )
@@ -97,7 +106,7 @@ class CombinationFieldPlotter(Plotter):
             p_range = combination.get_pressure_range()
             t_range = combination.get_temperature_range()
 
-            draw_rectangle(p_range, t_range)
+            draw_rectangle(p_range, t_range, options)
 
         plt.xlim(*options['p_range'])
         plt.ylim(*options['t_range'])
@@ -182,68 +191,5 @@ class GibbsDifferencePlotter(Plotter):
         ])
         plt.xlabel('$P$ / GPa')
         plt.ylabel(r'$\Delta G$ / Ryd')
-        plt.savefig(output, dpi=300)
-
-
-
-class PhaseDiagramSlowPlotter(Plotter):
-
-    type_keywords: List[str] = [ "phase_diagram_slow" ]
-    default_options: dict = {
-        "p_range": [-5, 300],
-        "p_step": 5,
-        "t_range": [0, 3000],
-        "t_step": 30,
-    }
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def plot(self, system: System, output: str, **kwargs):
-
-        options = self._load_kwargs(kwargs)
-
-        plt.figure()
-
-        from palettable.tableau import Tableau_10
-
-        def classifier(P, T):
-
-            combinations = system.find_combinations()
-            combinations_gibbs_free_energies = [
-                (idx, combination, combination.get_gibbs_free_energy(P, T)) for (idx, combination) in enumerate(combinations)
-                if combination.get_gibbs_free_energy(P, T) is not numpy.inf
-            ]
-
-            if len(combinations_gibbs_free_energies) == 0: return -1
-
-            idx = numpy.argmin([
-                g for (_, _, g) in combinations_gibbs_free_energies
-            ])
-
-            combination_idx = combinations_gibbs_free_energies[idx][0]
-
-            return combination_idx
-        
-        def mapper(v):
-            if v != -1:
-                return Tableau_10.mpl_colors[v]
-            else:
-                return (1, 1, 1)
-
-        P = numpy.arange(*options["p_range"], options["p_step"])
-        T = numpy.arange(*options["t_range"], options["t_step"])
-
-        P_grid, T_grid = numpy.meshgrid(P, T)
-
-        C_grid = numpy.vectorize(classifier)(P_grid.flatten(), T_grid.flatten()).reshape(P_grid.shape)
-
-        RGB_grid = numpy.zeros((T.shape[0], P.shape[0], 3))
-        
-        for i in range(P.shape[0]):
-            for j in range(T.shape[0]):
-                RGB_grid[j, i, :] = mapper(C_grid[j, i])
-
-        plt.imshow(RGB_grid, extent=options['p_range'] + options['t_range'], aspect='auto', origin='lower')
         plt.savefig(output, dpi=300)
 
