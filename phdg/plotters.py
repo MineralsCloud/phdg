@@ -39,6 +39,7 @@ def draw_rectangle(x, y, options: dict, text=""):
     rect = matplotlib.patches.Rectangle((x_min, y_min), -numpy.subtract(*x), -numpy.subtract(*y), facecolor=fc, edgecolor=ec)
     plt.gca().add_patch(rect)
     plt.text(x_max, y_max, text, ha='right', va='top', color=ec, fontsize="small")
+    plt.text(x_min, y_min, text, ha='left', va='bottom', color=ec, fontsize="small")
     return text, rect
 
 class SubstanceFieldPlotter(Plotter):
@@ -120,7 +121,8 @@ class GibbsDifferencePlotter(Plotter):
     default_options: dict = {
         "p_range": [-5, 500],
         "t_range": [0, 3000],
-        "t_step": 300
+        "t_step": 300,
+        "base": 0
     }
 
     def __init__(self) -> None:
@@ -131,7 +133,7 @@ class GibbsDifferencePlotter(Plotter):
 
         options = self._load_kwargs(kwargs)
 
-        plt.figure()
+        plt.figure(figsize=(9, 6))
 
         p_range = options['p_range']
         
@@ -140,7 +142,10 @@ class GibbsDifferencePlotter(Plotter):
             if (not combination.get_pressure_range()[1] < p_range[0]) and (not combination.get_pressure_range()[0] > p_range[1])
         ]
         
-        base_idx = 0
+        if isinstance(options['base'], int):
+            base_idx = options['base']
+        else:
+            raise NotImplementedError()
 
         line_style_keys = list(matplotlib.lines.lineStyles.keys())[:4] * 3
 
@@ -186,10 +191,11 @@ class GibbsDifferencePlotter(Plotter):
             matplotlib.lines.Line2D([0], [0], linestyle=s, c='k')
             for (c, s) in zip(combinations, line_style_keys[:len(combinations)])
         ], [ "$T$ = {} K".format(t) for t in t_array ] + [ 
-        ' + '.join(s[1].substance_name for s in combination.substances)
-        for combination in combinations
-        ])
+            ' + '.join(s[1].substance_name for s in combination.substances)
+            for combination in combinations
+        ], bbox_to_anchor=(1.04, .5), loc="center left")
         plt.xlabel('$P$ / GPa')
         plt.ylabel(r'$\Delta G$ / Ryd')
+        plt.tight_layout(rect=[0, 0, 0.8, 1])
         plt.savefig(output, dpi=300)
 

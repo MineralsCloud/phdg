@@ -12,4 +12,4 @@ class GibbsFreeEnergyGridTableReader:
     
     @staticmethod
     def read_gibbs_free_energy(fname: str):
-        return GibbsFreeEnergyGrid(*GibbsFreeEnergyGrid.load_table_from_file(fname + r'/results/g_tp_ry.txt'))
+        return GibbsFreeEnergyGrid(*GibbsFreeEnergyGrid.load_table_from_file(fname))
