@@ -9,8 +9,7 @@ class Substance:
     The class represent a certain structure. It holds the name and type and Gibbs free energy for the phase.
     '''
     substance_type: str
-    ssubstance_nameubstance_name: str
-    ssubstance_nameubstance_name: str
+    substance_name: str
     gibbs_free_energy: GibbsFreeEnergyGrid
     gibbs_free_energy_num_formula_units: float
 

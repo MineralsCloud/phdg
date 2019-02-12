@@ -23,11 +23,50 @@ class PhaseDiagramPlotter(Plotter):
         "custom_colors": [],
         "boundary_line": False,
         "highlight_overlay": True,
-        "highlight_alpha": 0.5
+        "highlight_alpha": 0.5,
+        "boundaries": []
     }
 
     def __init__(self) -> None:
         super().__init__()
+
+    def iterate_over_combination_by_description(self, combinations, combination_description):
+        for combination in combinations:
+            if len(combination.substances) == len(combination_description):
+                combination_names = [ substance[1].substance_name for substance in combination.substances ]
+                combination_types = [ substance[1].substance_type for substance in combination.substances ]
+                match = True
+                for substance_description in combination_description:
+                    if substance_description[0] not in combination_types or substance_description[1] not in combination_names:
+                        match = False
+                        break
+                if match: yield combination
+
+    def plot_boundary(self, ax: matplotlib.axes.Axes, system: System, boundary_options: dict):
+
+        p_min, p_max = numpy.ceil(numpy.array(boundary_options['p_range']) / boundary_options['p_step']) * boundary_options['p_step']
+        t_min, t_max = numpy.ceil(numpy.array(boundary_options['t_range']) / boundary_options['t_step']) * boundary_options['t_step']
+        
+        p_array = numpy.arange(p_min, p_max, boundary_options['p_step'])
+        t_array = numpy.arange(t_min, t_max, boundary_options['t_step'])
+
+        p_grid, t_grid = numpy.meshgrid(p_array, t_array)
+
+        combinations = system.find_combinations()
+
+        matched_combinations = [
+            next(self.iterate_over_combination_by_description(combinations, boundary_options['combinations'][0])),
+            next(self.iterate_over_combination_by_description(combinations, boundary_options['combinations'][1]))
+        ]
+
+        print(matched_combinations)
+
+        g_grid = numpy.subtract(
+            matched_combinations[0].get_gibbs_free_energy_unsafe(p_grid, t_grid),
+            matched_combinations[1].get_gibbs_free_energy_unsafe(p_grid, t_grid)
+        )
+
+        ax.contour(p_grid, t_grid, g_grid, levels=[0], colors=['k'], lw=1)
     
     def fill_patch(self, combinations: Combination, p_range: tuple, t_range: tuple, options: dict) -> numpy.ndarray:
         '''
@@ -153,6 +192,11 @@ class PhaseDiagramPlotter(Plotter):
             for combination in combinations
             if combinations.index(combination) in set(C_grid.flatten().tolist())
         ])
+
+        # Boundaries
+
+        for boundary_options in options['boundaries']:
+            self.plot_boundary(plt.gca(), system, boundary_options)
 
         plt.xlabel("$P$ / GPa")
         plt.ylabel("$T$ / K")
