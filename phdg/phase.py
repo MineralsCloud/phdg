@@ -23,8 +23,11 @@ class PhaseDiagramPlotter(Plotter):
         "custom_colors": [],
         "boundary_line": False,
         "highlight_overlay": True,
-        "highlight_alpha": 0.5,
-        "boundaries": []
+        "highlight_alpha": 0.7,
+        "boundaries": [],
+        "extensions": [],
+        "phase_legend": True,
+        "colors": []
     }
 
     def __init__(self) -> None:
@@ -66,7 +69,11 @@ class PhaseDiagramPlotter(Plotter):
             matched_combinations[1].get_gibbs_free_energy_unsafe(p_grid, t_grid)
         )
 
-        ax.contour(p_grid, t_grid, g_grid, levels=[0], colors=['k'], lw=1)
+        ax.contour(
+            p_grid, t_grid, g_grid, levels=[0], colors=['k'],
+            lw=1,
+            linestyles=boundary_options['line_style'] if 'line_style' in boundary_options else '-'
+        )
     
     def fill_patch(self, combinations: Combination, p_range: tuple, t_range: tuple, options: dict) -> numpy.ndarray:
         '''
@@ -90,12 +97,19 @@ class PhaseDiagramPlotter(Plotter):
         C_grid = numpy.argmin(G_grid, axis=2)
 
         return C_grid
+    
+    def load_extension(self, fig: matplotlib.figure.Figure, ax: matplotlib.axes.Axes, extension_fname: str):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(f"{__name__}.{extension_fname[:-3]}", extension_fname)
+        foo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(foo)
+        foo.__extended__(fig, ax)
 
     def plot(self, system: System, output: str, **kwargs):
 
         options = self._load_kwargs(kwargs)
 
-        plt.figure()
+        plt.figure(figsize=(8, 4))
 
         combinations = system.find_combinations()
 
@@ -158,8 +172,12 @@ class PhaseDiagramPlotter(Plotter):
         contour_levels = numpy.arange(-1.5, .5 + len(combinations), 1)
         contour_level_colors = [(1, 1, 1)] + [
             (numpy.random.random(), numpy.random.random(), numpy.random.random())
-            for _ in range(len(combinations))
+            for c in range(len(combinations))
         ]
+        for c in options['colors']:
+            combination = next(self.iterate_over_combination_by_description(combinations, c['combination']))
+            print(combination)
+            contour_level_colors[combinations.index(combination) + 1] = c['color']
 
         plt.imshow(
             C_grid,
@@ -183,20 +201,24 @@ class PhaseDiagramPlotter(Plotter):
             for p in p_bounds: plt.axvline(p, c='w', lw=.3, alpha=.3)
             for t in t_bounds: plt.axhline(t, c='w', lw=.3, alpha=.3)
         
-        plt.legend([
-            matplotlib.patches.Patch(facecolor=c, ec=c, alpha=.7)
-            for c in contour_level_colors[:]
-            if contour_level_colors.index(c) - 1 in set(C_grid.flatten().tolist()) and contour_level_colors.index(c) != 0
-        ], [
-            ' + '.join(s[1].substance_name for s in combination.substances)
-            for combination in combinations
-            if combinations.index(combination) in set(C_grid.flatten().tolist())
-        ])
+        if options['phase_legend'] != True:
+            plt.legend([
+                matplotlib.patches.Patch(facecolor=c, ec=c, alpha=.7)
+                for c in contour_level_colors[:]
+                if contour_level_colors.index(c) - 1 in set(C_grid.flatten().tolist()) and contour_level_colors.index(c) != 0
+            ], [
+                ' + '.join(s[1].substance_name for s in combination.substances)
+                for combination in combinations
+                if combinations.index(combination) in set(C_grid.flatten().tolist())
+            ])
 
         # Boundaries
 
         for boundary_options in options['boundaries']:
             self.plot_boundary(plt.gca(), system, boundary_options)
+        
+        for extension_fname in options['extensions']:
+            self.load_extension(plt.gcf(), plt.gca(), extension_fname)
 
         plt.xlabel("$P$ / GPa")
         plt.ylabel("$T$ / K")
